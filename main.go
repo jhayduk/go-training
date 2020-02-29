@@ -3,6 +3,7 @@ package main
 import (
 	"image"
 	"os"
+	"time"
 
 	// Import the image file formats that are to be supported
 	_ "image/png"
@@ -45,6 +46,7 @@ func run() {
 	if err != nil {
 		panic(err)
 	}
+	win.SetSmooth(true)
 
 	//
 	// Load the "hiking gopher" picture and create a sprite from it.
@@ -56,22 +58,35 @@ func run() {
 	}
 	sprite := pixel.NewSprite(pic, pic.Bounds())
 
-	win.Clear(colornames.Greenyellow)
-	//
-	// Note that sprites are anchored by their centers, and the x,y axis
-	// starting at the lower left and increasing "naturally" (x increases
-	// to the right and y increases upward).
-	//
-	// Moved(win.Bounds().Center()) does not, technically, mean "move to the
-	// center of the window", it means "move by the amount specified by a
-	// vector starting at the origin and ending at the center of the window".
-	//
-	sprite.Draw(win, pixel.IM.Moved(win.Bounds().Center()))
+	win.Clear(colornames.Firebrick)
+
+	angle := 0.0
 
 	//
 	// Continuously update the window until the close button is hit
 	//
+	last := time.Now()
 	for !win.Closed() {
+		dt := time.Since(last).Seconds()
+		last = time.Now()
+
+		angle += 3 * dt
+
+		//
+		// Note that sprites are anchored by their centers, the x,y axis
+		// starts at the lower left and the axes increase "naturally" (x
+		// increases to the right and y increases upward).
+		mat := pixel.IM
+		mat = mat.Rotated(pixel.ZV, angle)
+		//
+		// Moved(win.Bounds().Center()) does not, technically, mean "move to the
+		// center of the window", it means "move by the amount specified by a
+		// vector starting at the origin and ending at the center of the window".
+		//
+		mat = mat.Moved(win.Bounds().Center())
+
+		win.Clear(colornames.Firebrick)
+		sprite.Draw(win, mat)
 		win.Update()
 	}
 
