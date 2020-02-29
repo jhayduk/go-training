@@ -2,6 +2,8 @@ package main
 
 import (
 	"image"
+	"math"
+	"math/rand"
 	"os"
 	"time"
 
@@ -46,21 +48,27 @@ func run() {
 	if err != nil {
 		panic(err)
 	}
-	win.SetSmooth(true)
 
-	//
-	// Load the "hiking gopher" picture and create a sprite from it.
-	// For now, this is the player character (I presume)
-	//
-	pic, err := loadPicture("hiking.png")
+	spritesheet, err := loadPicture("trees.png")
 	if err != nil {
 		panic(err)
 	}
-	sprite := pixel.NewSprite(pic, pic.Bounds())
 
-	win.Clear(colornames.Firebrick)
+	var treesFrames []pixel.Rect
+	for x := spritesheet.Bounds().Min.X; x < spritesheet.Bounds().Max.X; x += 32 {
+		for y := spritesheet.Bounds().Min.Y; y < spritesheet.Bounds().Max.Y; y += 32 {
+			treesFrames = append(treesFrames, pixel.R(x, y, x+32, y+32))
+		}
+	}
 
-	angle := 0.0
+	var (
+		camPos       = pixel.ZV
+		camSpeed     = 500.0
+		camZoom      = 1.0
+		camZoomSpeed = 1.2
+		trees        []*pixel.Sprite
+		matrices     []pixel.Matrix
+	)
 
 	//
 	// Continuously update the window until the close button is hit
@@ -70,23 +78,37 @@ func run() {
 		dt := time.Since(last).Seconds()
 		last = time.Now()
 
-		angle += 3 * dt
+		cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(camPos))
+		win.SetMatrix(cam)
 
-		//
-		// Note that sprites are anchored by their centers, the x,y axis
-		// starts at the lower left and the axes increase "naturally" (x
-		// increases to the right and y increases upward).
-		mat := pixel.IM
-		mat = mat.Rotated(pixel.ZV, angle)
-		//
-		// Moved(win.Bounds().Center()) does not, technically, mean "move to the
-		// center of the window", it means "move by the amount specified by a
-		// vector starting at the origin and ending at the center of the window".
-		//
-		mat = mat.Moved(win.Bounds().Center())
+		if win.JustPressed(pixelgl.MouseButtonLeft) {
+			tree := pixel.NewSprite(spritesheet, treesFrames[rand.Intn(len(treesFrames))])
+			trees = append(trees, tree)
+			// Unproject transforms to game space
+			mouse := cam.Unproject(win.MousePosition())
+			matrices = append(matrices, pixel.IM.Scaled(pixel.ZV, 4).Moved(mouse))
+		}
 
-		win.Clear(colornames.Firebrick)
-		sprite.Draw(win, mat)
+		if win.Pressed(pixelgl.KeyLeft) {
+			camPos.X -= camSpeed * dt
+		}
+		if win.Pressed(pixelgl.KeyRight) {
+			camPos.X += camSpeed * dt
+		}
+		if win.Pressed(pixelgl.KeyDown) {
+			camPos.Y -= camSpeed * dt
+		}
+		if win.Pressed(pixelgl.KeyUp) {
+			camPos.Y += camSpeed * dt
+		}
+		camZoom *= math.Pow(camZoomSpeed, win.MouseScroll().Y)
+
+		win.Clear(colornames.Forestgreen)
+
+		for i, tree := range trees {
+			tree.Draw(win, matrices[i])
+		}
+
 		win.Update()
 	}
 
