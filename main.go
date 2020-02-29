@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"image"
 	"math"
 	"math/rand"
@@ -42,7 +43,7 @@ func run() {
 		Title:  "Pixel Rocks!",
 		Bounds: pixel.R(0, 0, 1024, 768),
 		// Limit screen updates to the refresh rate of the monitor.
-		VSync: true,
+		// VSync: true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
@@ -53,6 +54,8 @@ func run() {
 	if err != nil {
 		panic(err)
 	}
+
+	batch := pixel.NewBatch(&pixel.TrianglesData{}, spritesheet)
 
 	var treesFrames []pixel.Rect
 	for x := spritesheet.Bounds().Min.X; x < spritesheet.Bounds().Max.X; x += 32 {
@@ -66,8 +69,8 @@ func run() {
 		camSpeed     = 500.0
 		camZoom      = 1.0
 		camZoomSpeed = 1.2
-		trees        []*pixel.Sprite
-		matrices     []pixel.Matrix
+		frames       = 0
+		second       = time.Tick(time.Second)
 	)
 
 	//
@@ -81,12 +84,11 @@ func run() {
 		cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(camPos))
 		win.SetMatrix(cam)
 
-		if win.JustPressed(pixelgl.MouseButtonLeft) {
+		if win.Pressed(pixelgl.MouseButtonLeft) {
 			tree := pixel.NewSprite(spritesheet, treesFrames[rand.Intn(len(treesFrames))])
-			trees = append(trees, tree)
 			// Unproject transforms to game space
 			mouse := cam.Unproject(win.MousePosition())
-			matrices = append(matrices, pixel.IM.Scaled(pixel.ZV, 4).Moved(mouse))
+			tree.Draw(batch, pixel.IM.Scaled(pixel.ZV, 4).Moved(mouse))
 		}
 
 		if win.Pressed(pixelgl.KeyLeft) {
@@ -104,12 +106,16 @@ func run() {
 		camZoom *= math.Pow(camZoomSpeed, win.MouseScroll().Y)
 
 		win.Clear(colornames.Forestgreen)
-
-		for i, tree := range trees {
-			tree.Draw(win, matrices[i])
-		}
-
+		batch.Draw(win)
 		win.Update()
+
+		frames++
+		select {
+		case <-second:
+			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
+			frames = 0
+		default:
+		}
 	}
 
 }
