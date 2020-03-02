@@ -2,10 +2,8 @@ package main
 
 import (
 	"fmt"
-	"image"
 	"math"
 	"math/rand"
-	"os"
 	"time"
 
 	// Import the image file formats that are to be supported
@@ -13,25 +11,10 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/jhayduk/go-training/overworld"
+	"github.com/jhayduk/go-training/utils"
 	"golang.org/x/image/colornames"
 )
-
-//
-// loadPicture is a helper function to load pictures from files
-// into a PictureData object.
-//
-func loadPicture(path string) (pixel.Picture, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, err
-	}
-	defer file.Close()
-	img, _, err := image.Decode(file)
-	if err != nil {
-		return nil, err
-	}
-	return pixel.PictureDataFromImage(img), nil
-}
 
 //
 // run is the main function of the game. It performs the initialization
@@ -41,16 +24,16 @@ func loadPicture(path string) (pixel.Picture, error) {
 func run() {
 	cfg := pixelgl.WindowConfig{
 		Title:  "Pixel Rocks!",
-		Bounds: pixel.R(0, 0, 1024, 768),
+		Bounds: pixel.R(0, 0, utils.WindowSize.X, utils.WindowSize.Y),
 		// Limit screen updates to the refresh rate of the monitor.
-		// VSync: true,
+		VSync: true,
 	}
 	win, err := pixelgl.NewWindow(cfg)
 	if err != nil {
 		panic(err)
 	}
 
-	spritesheet, err := loadPicture("trees.png")
+	spritesheet, err := utils.LoadPicture("assets/trees.png")
 	if err != nil {
 		panic(err)
 	}
@@ -66,7 +49,7 @@ func run() {
 
 	var (
 		camPos       = pixel.ZV
-		camSpeed     = 500.0
+		camSpeed     = 250.0
 		camZoom      = 1.0
 		camZoomSpeed = 1.2
 		frames       = 0
@@ -84,7 +67,7 @@ func run() {
 		cam := pixel.IM.Scaled(camPos, camZoom).Moved(win.Bounds().Center().Sub(camPos))
 		win.SetMatrix(cam)
 
-		if win.Pressed(pixelgl.MouseButtonLeft) {
+		if win.JustPressed(pixelgl.MouseButtonLeft) {
 			tree := pixel.NewSprite(spritesheet, treesFrames[rand.Intn(len(treesFrames))])
 			// Unproject transforms to game space
 			mouse := cam.Unproject(win.MousePosition())
@@ -93,20 +76,27 @@ func run() {
 
 		if win.Pressed(pixelgl.KeyLeft) {
 			camPos.X -= camSpeed * dt
+			if camPos.X <= pixel.ZV.X {
+				camPos.X = pixel.ZV.X
+			}
 		}
 		if win.Pressed(pixelgl.KeyRight) {
 			camPos.X += camSpeed * dt
 		}
 		if win.Pressed(pixelgl.KeyDown) {
 			camPos.Y -= camSpeed * dt
+			if camPos.Y <= pixel.ZV.Y {
+				camPos.Y = pixel.ZV.Y
+			}
 		}
 		if win.Pressed(pixelgl.KeyUp) {
 			camPos.Y += camSpeed * dt
 		}
 		camZoom *= math.Pow(camZoomSpeed, win.MouseScroll().Y)
 
-		win.Clear(colornames.Forestgreen)
+		win.Clear(colornames.Blue)
 		batch.Draw(win)
+		overworld.Draw(win)
 		win.Update()
 
 		frames++
@@ -117,7 +107,6 @@ func run() {
 		default:
 		}
 	}
-
 }
 
 //

@@ -16,3 +16,6 @@
 
 # IDEs
 .vscode/
+
+# OS Related
+.DS_Store
