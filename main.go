@@ -11,8 +11,10 @@ import (
 
 	"github.com/faiface/pixel"
 	"github.com/faiface/pixel/pixelgl"
+	"github.com/jhayduk/go-training/link"
 	"github.com/jhayduk/go-training/overworld"
 	"github.com/jhayduk/go-training/utils"
+	"github.com/jhayduk/go-training/utils/nes"
 	"golang.org/x/image/colornames"
 )
 
@@ -23,8 +25,8 @@ import (
 //
 func run() {
 	cfg := pixelgl.WindowConfig{
-		Title:  "Pixel Rocks!",
-		Bounds: pixel.R(0, 0, utils.WindowSize.X, utils.WindowSize.Y),
+		Title:  "The Legend of Zelda",
+		Bounds: pixel.R(0, 0, nes.MapSize.X*utils.NESToCurrentScaling, nes.MapSize.Y*utils.NESToCurrentScaling),
 		// Limit screen updates to the refresh rate of the monitor.
 		VSync: true,
 	}
@@ -33,13 +35,14 @@ func run() {
 		panic(err)
 	}
 
+	// TODO: Placing trees will be removed in the future. This was
+	// part of the initial tutorial.
 	spritesheet, err := utils.LoadPicture("assets/trees.png")
 	if err != nil {
 		panic(err)
 	}
 
 	batch := pixel.NewBatch(&pixel.TrianglesData{}, spritesheet)
-
 	var treesFrames []pixel.Rect
 	for x := spritesheet.Bounds().Min.X; x < spritesheet.Bounds().Max.X; x += 32 {
 		for y := spritesheet.Bounds().Min.Y; y < spritesheet.Bounds().Max.Y; y += 32 {
@@ -48,7 +51,7 @@ func run() {
 	}
 
 	var (
-		camPos       = pixel.ZV
+		camPos       = nes.StartingLocation.Scaled(utils.NESToCurrentScaling)
 		camSpeed     = 250.0
 		camZoom      = 1.0
 		camZoomSpeed = 1.2
@@ -76,18 +79,12 @@ func run() {
 
 		if win.Pressed(pixelgl.KeyLeft) {
 			camPos.X -= camSpeed * dt
-			if camPos.X <= pixel.ZV.X {
-				camPos.X = pixel.ZV.X
-			}
 		}
 		if win.Pressed(pixelgl.KeyRight) {
 			camPos.X += camSpeed * dt
 		}
 		if win.Pressed(pixelgl.KeyDown) {
 			camPos.Y -= camSpeed * dt
-			if camPos.Y <= pixel.ZV.Y {
-				camPos.Y = pixel.ZV.Y
-			}
 		}
 		if win.Pressed(pixelgl.KeyUp) {
 			camPos.Y += camSpeed * dt
@@ -97,12 +94,13 @@ func run() {
 		win.Clear(colornames.Blue)
 		batch.Draw(win)
 		overworld.Draw(win)
+		link.Draw(win)
 		win.Update()
 
 		frames++
 		select {
 		case <-second:
-			win.SetTitle(fmt.Sprintf("%s | FPS: %d", cfg.Title, frames))
+			win.SetTitle(fmt.Sprintf("%s (%d FPS) (%.2f, %.2f)", cfg.Title, frames, camPos.X, camPos.Y))
 			frames = 0
 		default:
 		}
