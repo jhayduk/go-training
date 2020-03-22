@@ -79,19 +79,19 @@ func run() {
 
 		if win.Pressed(pixelgl.KeyLeft) {
 			camPos.X -= camSpeed * dt
-			link.Turn(link.West)
+			link.Move(link.West, dt)
 		}
 		if win.Pressed(pixelgl.KeyRight) {
 			camPos.X += camSpeed * dt
-			link.Turn(link.East)
+			link.Move(link.East, dt)
 		}
 		if win.Pressed(pixelgl.KeyDown) {
 			camPos.Y -= camSpeed * dt
-			link.Turn(link.South)
+			link.Move(link.South, dt)
 		}
 		if win.Pressed(pixelgl.KeyUp) {
 			camPos.Y += camSpeed * dt
-			link.Turn(link.North)
+			link.Move(link.North, dt)
 		}
 		camZoom *= math.Pow(camZoomSpeed, win.MouseScroll().Y)
 

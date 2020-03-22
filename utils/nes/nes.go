@@ -29,9 +29,9 @@ var MapSize pixel.Vec = pixel.V(256.0, 176.0)
 // StartingLocation is a vector representing the starting location in the
 // overworld where the adventure starts. Link should be placed centered at
 // this location, and the camera should start centered in that location as
-// well. On the spritesheet, this is in the center of the 8th map on the
-// bottom 1st row of maps. This is essentially at the center of the bottom
-// of the overworld.
+// well. On the overworld spritesheet, this is in the center of the 8th map
+// on the bottom 1st row of maps. This is essentially at the center of the
+// bottom of the overworld.
 var StartingLocation pixel.Vec = MapSize.ScaledXY(pixel.V(8.0, 1.0))
 
 // SpriteSize is a vector representing the size of an individual sprite in
